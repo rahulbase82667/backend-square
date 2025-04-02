@@ -19,10 +19,15 @@ const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAlzgK0JQUthQ993_EIKGXOeI9EJv-fgKcsbF4prmpZ
 app.use(express.json());
 
 // Enable CORS for all routes
+// app.use(cors({
+//   origin: 'http://localhost:8080',
+//   credentials: true
+// }));
+
 app.use(cors({
-  origin: 'http://localhost:8080',
-  credentials: true
-}));
+  origin : '*',
+  credentials : true
+}))
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
