@@ -18,7 +18,7 @@ const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAlzgK0JQUthQ993_EIKGXOeI9EJv-fgKcsbF4prmpZ
 
 app.use(express.json());
 
-// Enable CORS for all routes
+// Enable CORS for all routesss
 // app.use(cors({
 //   origin: 'http://localhost:8080',
 //   credentials: true
