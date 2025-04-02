@@ -10,7 +10,9 @@ const multer = require('multer');
 const LOCATION_ID = "L6NEBHY0KA8SQ"
 
 const SQUARE_API_URL = 'https://connect.squareup.com/v2/online-checkout/payment-links';
-const SQUARE_ACCESS_TOKEN = "EAAAl1RLSu-nfyDh5Mo7Z0wlirsT9avK-Jd-wH3LzUu_Nt4FjtOaA4Rzj3639wgx";
+const SQUARE_ACCESS_TOKEN = "EAAAl_VtGNdCfwlwBy_sGpelkAW_fyZhNiA1pqMG3KIB-SAaZN9gqFTKXNUviZSg";
+
+
 const SQUARE_IMAGE_API = 'https://connect.squareup.com/v2/catalog/images';
 
 const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAlzgK0JQUthQ993_EIKGXOeI9EJv-fgKcsbF4prmpZ4MB1gTOChj9TGbevhdl";
