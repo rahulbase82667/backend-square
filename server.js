@@ -19,15 +19,10 @@ const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAlzgK0JQUthQ993_EIKGXOeI9EJv-fgKcsbF4prmpZ
 app.use(express.json());
 
 // Enable CORS for all routes
-// app.use(cors({
-//   origin: 'http://localhost:8080',
-//   credentials: true
-// }));
-
 app.use(cors({
-  origin : '*',
-  credentials : true
-}))
+  origin: 'https://square-frontend-mdow04yz5-rahuls-projects-65da8552.vercel.app',
+  credentials: true
+}));
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
