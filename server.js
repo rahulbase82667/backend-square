@@ -10,12 +10,12 @@ const multer = require('multer');
 const LOCATION_ID = "L6NEBHY0KA8SQ"
 
 const SQUARE_API_URL = 'https://connect.squareup.com/v2/online-checkout/payment-links';
-const SQUARE_ACCESS_TOKEN = "EAAAl_VtGNdCfwlwBy_sGpelkAW_fyZhNiA1pqMG3KIB-SAaZN9gqFTKXNUviZSg";
+const SQUARE_ACCESS_TOKEN = "EAAAlrWnHoPMl_r-MMNdEHCmNz5w4qO17pkrCkZ6d7vi-iAbaoSgDhE3E0gYOea8";
 
 
 const SQUARE_IMAGE_API = 'https://connect.squareup.com/v2/catalog/images';
 
-const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAlzgK0JQUthQ993_EIKGXOeI9EJv-fgKcsbF4prmpZ4MB1gTOChj9TGbevhdl";
+const SQUARE_IMAGE_ACCESS_TOKEN = "EAAAl2COvdDLOkE1aZLcLezxH2cN9BxUmh1DBYN0HPkSQbsqOwsJVnNnjE8FJ6RK";
 
 
 app.use(express.json());
@@ -27,8 +27,8 @@ app.use(express.json());
 // }));
 
 app.use(cors({
-  origin : '*',
-  credentials : true
+  origin: '*',
+  credentials: true,
 }))
 
 const storage = multer.memoryStorage();
@@ -90,7 +90,7 @@ app.post('/api/catalog/object', async (req, res) => {
       req.body,
       {
         headers: {
-          Authorization: `Bearer EAAAlk3V8-x2wAZd8-F8ERSbWpCNXrr0Yqm1fr-ohMpcZwu1RfXFqHW-4JBZycKc`,
+          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
           "Content-Type": "application/json"
         }
       }
@@ -106,7 +106,7 @@ app.get('/api/catalog/list', async (req, res) => {
   try {
     const response = await axios.get('https://connect.squareup.com/v2/catalog/list', {
       headers: {
-        Authorization: `Bearer EAAAl7wuu6ayAloKJ0uxnDTt6QX2-Sa8W7tmGSuMcADB09D4CNQgyrgBa19QG5hC`,
+        Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
         'Content-Type': 'application/json'
       }
     });
@@ -118,48 +118,68 @@ app.get('/api/catalog/list', async (req, res) => {
 });
 
 
-app.post('/api/upload-image', upload.single('image'), async (req, res) => {
+app.post('/api/upload-image', upload.array('image', 10), async (req, res) => {
   try {
     const { objectId, name, caption } = req.body;
 
-    if (!req.file || !objectId || !name) {
-      return res.status(400).json({ success: false, message: 'Image file, objectId, and name are required' });
+    if (!req.files || req.files.length === 0 || !objectId || !name) {
+      return res.status(400).json({ success: false, message: 'Images, objectId, and name are required' });
     }
 
-    const form = new FormData();
-    form.append('file', req.file.buffer, req.file.originalname);
-    form.append(
-      'request',
-      JSON.stringify({
-        idempotency_key: crypto.randomUUID(),
-        object_id: objectId,
-        image: {
-          type: 'IMAGE',
-          id: `#${crypto.randomUUID()}`,
-          image_data: {
-            name,
-            caption
+    const uploadResults = [];
+
+    for (const file of req.files) {
+      const form = new FormData();
+
+      form.append('file', file.buffer, file.originalname);
+      form.append(
+        'request',
+        JSON.stringify({
+          idempotency_key: crypto.randomUUID(),
+          object_id: objectId,
+          image: {
+            type: 'IMAGE',
+            id: `#${crypto.randomUUID()}`,
+            image_data: {
+              name,
+              caption
+            }
           }
-        }
-      })
-    );
+        })
+      );
 
-    const response = await axios.post(SQUARE_IMAGE_API, form, {
-      headers: {
-        Authorization: `Bearer ${SQUARE_IMAGE_ACCESS_TOKEN}`,
-        ...form.getHeaders()
+      try {
+        const response = await axios.post(SQUARE_IMAGE_API, form, {
+          headers: {
+            Authorization: `Bearer ${SQUARE_IMAGE_ACCESS_TOKEN}`,
+            ...form.getHeaders()
+          }
+        });
+
+        uploadResults.push({
+          success: true,
+          file: file.originalname,
+          data: response.data
+        });
+      } catch (err) {
+        console.error(`Image ${file.originalname} upload failed:`, err.response?.data || err.message);
+        uploadResults.push({
+          success: false,
+          file: file.originalname,
+          error: err.response?.data?.message || err.message
+        });
       }
-    });
+    }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      data: response.data
+      results: uploadResults
     });
-  } catch (error) {
-    console.error('Error uploading image:', error.response?.data || error.message);
-    return res.status(500).json({
+  } catch (err) {
+    console.error('Unexpected error uploading images:', err);
+    res.status(500).json({
       success: false,
-      message: error.response?.data?.message || 'Failed to upload image'
+      message: 'Failed to upload images'
     });
   }
 });
@@ -172,8 +192,8 @@ app.delete('/api/catalog/object/:id', async (req, res) => {
       `https://connect.squareup.com/v2/catalog/object/${id}`,
       {
         headers: {
-          Authorization: "Bearer EAAAlwHqntVikuasM2tsIdnYqngbuJ99vGLc_a8CvKigPPW3qMOlSz6u9FyhCjf0",
-          'Square-Version': '2025-03-19',  
+          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
+          'Square-Version': '2025-03-19',
           'Content-Type': 'application/json',
         },
       }
@@ -194,8 +214,8 @@ app.delete('/api/catalog/object/:id', async (req, res) => {
     }
   } catch (error) {
     const errorMessage = error.response?.data?.errors?.[0]?.detail ||
-                         error.response?.data?.message ||
-                         'Failed to delete product';
+      error.response?.data?.message ||
+      'Failed to delete product';
 
     console.error('Error deleting product:', error.response?.data || error.message);
 
@@ -219,7 +239,7 @@ app.get('/api/product/:id', async (req, res) => {
       `https://connect.squareup.com/v2/catalog/object/${id}`,
       {
         headers: {
-          Authorization: `Bearer EAAAlk3V8-x2wAZd8-F8ERSbWpCNXrr0Yqm1fr-ohMpcZwu1RfXFqHW-4JBZycKc`,
+          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
           'Content-Type': 'application/json',
         },
       }
